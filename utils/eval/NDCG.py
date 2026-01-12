@@ -16,7 +16,6 @@ def evaluate(preds, gts, topk=20):
         gt = int(gts[i])
         assert 0 <= gt < pred.size, f"gt index out of range: {gt}"
 
-        # 全局名次（dense rank）：严格大于 gt 分数的个数 + 1
         p = 1 + int(np.count_nonzero(pred > pred[gt]))
         if p <= min(topk, pred.size):
             ndcg[i] = 1.0 / np.log2(p + 1)

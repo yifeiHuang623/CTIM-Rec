@@ -39,18 +39,17 @@ class EarlyStopping(object):
             metric_name, metric_value, higher_better = metric_tuple[0], metric_tuple[1], metric_tuple[2]
             
             if higher_better:
-                if self.best_metrics.get(metric_name) is None or metric_value > self.best_metrics.get(metric_name):
+                if self.best_metrics.get(metric_name) is None or metric_value >= self.best_metrics.get(metric_name):
                     metrics_compare_results.append(True)
                 else:
                     metrics_compare_results.append(False)
             else:
-                if self.best_metrics.get(metric_name) is None or metric_value < self.best_metrics.get(metric_name):
+                if self.best_metrics.get(metric_name) is None or metric_value <= self.best_metrics.get(metric_name):
                     metrics_compare_results.append(True)
                 else:
                     metrics_compare_results.append(False)
                     
         # all the computed metrics are better than the best metrics
-        # if torch.any(torch.Tensor(metrics_compare_results)):
         if torch.all(torch.tensor(metrics_compare_results)):
             for metric_tuple in metrics:
                 metric_name, metric_value = metric_tuple[0], metric_tuple[1]

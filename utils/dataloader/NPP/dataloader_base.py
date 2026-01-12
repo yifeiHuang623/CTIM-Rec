@@ -1,16 +1,15 @@
 from torch.utils.data import Dataset, DataLoader, random_split
 import torch
 from tqdm import tqdm
-from typing import List, Dict, Any, Tuple, Callable
+from typing import List, Dict, Any, Callable
 import numpy as np
 import pandas as pd
 
 from utils.register import VIEW_REGISTRY
 
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 import numpy as np
 import pandas as pd
-# from joblib import Parallel, delayed  # 可选并行
 from torch.utils.data import Dataset
 from collections import OrderedDict 
 
@@ -40,15 +39,13 @@ def post_process_func(
             start_idx = break_indices[i]
             end_idx = break_indices[i + 1] - 1
             length = end_idx - start_idx + 1
+            
             if length <= 2:
                 continue
             
             slice_end = min(end_idx, start_idx + sequence_length)
             real_len  = slice_end - start_idx
             pad_num   = sequence_length - real_len
-            
-            if real_len <= 2:
-                  continue
 
             sample = {
                 'user_id': user_id,
@@ -70,76 +67,32 @@ def post_process_func(
                 sample[col]        = seq
             data_list.append(sample)
             
-        # while start_idx < len(data) - 1:
-        #     end_idx  = start_idx + sequence_length
-        #     slice_end = min(end_idx, len(data) - 1)
-        #     real_len  = slice_end - start_idx
-        #     pad_num   = sequence_length - real_len
-
-        #     # mask = np.pad(np.ones(real_len, dtype=int),
-        #     #             (0, pad_num),
-        #     #             constant_values=0)
-
-        #     sample = {
-        #         'user_id': user_id,
-        #         'mask'   : real_len,
-        #         'trajectory_id': len(data_list), 
-        #         'y_POI_id': data.iloc[slice_end].to_dict()
-        #     }
-        #     sample['y_POI_id']['trajectory_id'] = sample['trajectory_id']
-
-        #     for col in cols:
-        #         if col in sample:
-        #             continue
-        #         seq = data[col].iloc[start_idx:slice_end].to_numpy()
-
-        #         pad_val = 0 if np.issubdtype(seq.dtype, np.number) else None
-        #         if pad_num:
-        #             seq = np.pad(seq, (0, pad_num), constant_values=pad_val)
-
-        #         sample[col]        = seq
-        #     data_list.append(sample)
-            
-        #     start_idx += sequence_length
-            
     return data_list
 
 
 def flex_collate(batch):
-    """
-    对 batch (list[dict]) 递归地做：
-      - 若所有值都是 Tensor → stack
-      - 若都是数值 → tensor
-      - 否则收集成 list（保持顺序）
-    
-    允许不同样本拥有不同键：缺键处补 None。
-    """
-    # 1) 先求所有样本的“并集键”
     all_keys = set().union(*batch)
     collated = {}
     for k in all_keys:
         values = [b.get(k, None) for b in batch]
 
-        # ========= 递归三判 =========
-        # (a) 全是 Tensor 且 shape 一致
         if all(isinstance(v, torch.Tensor) for v in values):
             collated[k] = torch.stack(values)
-        # (b) 全是数值
+
         elif all(isinstance(v, (int, float, np.integer, np.floating)) for v in values):
             collated[k] = torch.tensor(values)
-        # (c) 全是 dict → 递归
+
         elif all(isinstance(v, dict) for v in values if v is not None):
-            # 注意：允许 None；把 None 替成空 dict 递归
+
             sub_batch = [{**(v or {})} for v in values]
             collated[k] = flex_collate(sub_batch)
         else:
-            # 其它类型（str、list、混合）→ 原样 list
+            
             collated[k] = values
 
     return collated
 
 def _maybe_tensor(x):
-    """数值 → Tensor，其余原样"""
     if isinstance(x, torch.Tensor):
         return x
     if isinstance(x, (int, float, np.integer, np.floating)):
@@ -182,7 +135,6 @@ class BaseDataset(Dataset):
 
     def __getitem__(self, idx):
         s = self.samples[idx]
-        # 需要保持插入顺序可用 OrderedDict；否则普通 dict 也已保持顺序
         ordered = OrderedDict()
         for k, v in s.items():
             ordered[k] = _maybe_tensor(v)

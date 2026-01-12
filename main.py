@@ -11,23 +11,23 @@ def parse_cli():
     p.add_argument("--dataset", default="all", help="'all' or comma list of datasets")
     p.add_argument("--metrics", default="all", help="'all' or comma list of metrics")
     p.add_argument("--cfg",     default=None,  help="extra YAML config path")
-    p.add_argument("--task",    default='NPP', help="task name, e.g., NPP, Recoverym2m, etc.")
+    p.add_argument("--task",    default='NPP', help="task name.")
     return p.parse_args()
 args = parse_cli()
 
-set_model_name(args.model)  # 设置日志文件名
-set_dataset_name(args.dataset)  # 设置数据集名称
-set_log_file_name()  # 设置日志文件名
+set_model_name(args.model)  
+set_dataset_name(args.dataset)  
+set_log_file_name()  
 log = get_logger('main')
 
 from pathlib import Path
 from utils.register import DATALOADER_REGISTRY, EVAL_REGISTRY, VIEW_REGISTRY
 from utils.exargs   import ConfigResolver
-import utils.dataloader   # 触发注册
-import utils.eval         # 触发注册
-import utils.views        # 触发注册
+import utils.dataloader   
+import utils.eval         
+import utils.views        
 
-utils.dataloader.register_all(task=args.task)  # 注册所有数据加载器
+utils.dataloader.register_all(task=args.task)  
 
 
 # ---------- Config ----------
@@ -37,26 +37,22 @@ def load_cfg(dataset, cfg_path):
     default = Path(__file__).resolve().parent / "data" / dataset / f"{dataset}.yaml"
     if default.exists():
         return ConfigResolver(str(default)).parse()
-    return {}  # 没有 YAML 就返回空 dict
+    return {}  
 
-# ---------- 主流程 ----------
 def main():
 
-    # 数据集列表
     datasets = (
         list(DATALOADER_REGISTRY)
         if args.dataset.lower() == "all"
         else [d.strip() for d in args.dataset.split(",")]
     )
 
-    # 评测指标列表
     metric_keys = (
         list(EVAL_REGISTRY)
         if args.metrics.lower() == "all"
         else [m.strip() for m in args.metrics.split(",")]
     )
-
-    # 动态 import 模型
+    
     mod_path = f"model.{args.model}.main"
     try:
         model_mod = importlib.import_module(mod_path)
@@ -72,7 +68,6 @@ def main():
 
     model_args = ConfigResolver(f"model/{args.model}/{args.model}.yaml").parse()
 
-    # 逐数据集评测
     for ds in datasets:
         if hasattr(model_mod, "pre_views") and model_mod.pre_views:
             log.info("Using pre-views: %s", model_mod.pre_views)
@@ -121,18 +116,7 @@ def main():
                     score = np.mean(np.abs(time_gts - time))
                 scores[m] = score
                 log.info("[%s] %-12s : %.6f", ds, m, score)
-            # time = preds["time"]
-            # time_gts = gts["time"]
-            # diff = np.abs(time - time_gts)
-            # for k in [1, 3, 6]:
-            #     accuracy = np.mean(diff <= k)
-            #     log.info("Time Accuracy @%d : %.6f", k, accuracy)
-        # for m in metric_keys:
-        #     score = EVAL_REGISTRY[m](preds, gts)
-        #     scores[m] = score
-        #     log.info("[%s] %-12s : %.6f", ds, m, score)
-
-        # 保存 JSON
+            
         if scores:
             out = {"model": args.model, "dataset": ds, "scores": scores}
             print(out)

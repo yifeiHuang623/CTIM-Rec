@@ -21,10 +21,6 @@ def pre_process_func() -> pd.DataFrame:
     df["POI_id"] = pd.factorize(df["POI_id"])[0] + 1
     df["user_id"] = pd.factorize(df["user_id"])[0] + 1
     df["POI_catid"] = pd.factorize(df["POI_catid"])[0] + 1
-    
-    # cat_mapping = df[['POI_id', 'POI_catname']].drop_duplicates().sort_values('POI_id')
-    # cat_mapping.to_csv('/home/huangyf/TGN/Traj_TPP4NPP/analysis/id_type_map.csv', index=False, encoding='utf-8-sig')
-    
     df["timestamps"] = pd.to_datetime(df["UTCTimeOffsetEpoch"], unit="s", errors="coerce").view("int64") // 10**9
     df = df.drop(columns=["UTCTimeOffsetEpoch"])
     df["user_id"] = df["user_id"].astype('int64')
