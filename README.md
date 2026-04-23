@@ -1,6 +1,6 @@
 # CTIM-Rec
 
-A PyTorch-based experimental repository for POI recommendation / next POI prediction. The project currently includes the `CTIM_Rec` model and example datasets for `NYC`, `TKY`, and `CA`.
+A PyTorch-based experimental repository for next POI prediction. The project currently includes the `CTIM_Rec` model and example datasets for `NYC`, `TKY`, and `CA`.
 
 ## Structure
 
@@ -12,7 +12,7 @@ A PyTorch-based experimental repository for POI recommendation / next POI predic
 ## Example
 
 ```bash
-python main.py --model CTIM_Rec --dataset NYC --task NPP
+python main.py --model CTIM_Rec --dataset NYC 
 ```
 
 Optional arguments:
@@ -20,7 +20,6 @@ Optional arguments:
 - `--dataset`: `all` or a specific dataset such as `NYC`
 - `--metrics`: `all` or specific evaluation metrics
 - `--cfg`: path to an extra YAML config file
-- `--task`: task name, default is `NPP`
 
 ## Output
 
